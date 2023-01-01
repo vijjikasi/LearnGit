@@ -1,0 +1,201 @@
+appsetting.json:
+
+"mysqlconnection": {
+    "connectionString": "server=208.91.199.11;port=3306;user=ztravilr_reuser;password=!yzN4a97;database=ztravilr_realestatecrm;"
+  }
+
+DBContext.cs
+
+using Microsoft.EntityFrameworkCore;
+using System.Data;
+
+namespace RealEsateCRMAPI.Entities
+{
+    public class DBContext : DbContext
+    {
+        public DBContext(DbContextOptions options) : base(options)
+        {
+        } 
+        public DbSet<Employee> Employees { get; set; }
+    }
+}
+
+
+employee.cs
+
+namespace RealEsateCRMAPI.Entities
+{
+    public partial class Employee
+    {
+        public int EmployeeId { get; set; }
+        public string EmployeeNo { get; set; }
+        public string Name { get; set; }
+        public int DesginationId { get; set; }
+        public DateTime DateOfJoin { get; set; }
+        public DateTime DateofLeaving { get; set; }
+        public string Gender { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string AlternateMobile { get; set; }
+        public string Address { get; set; }
+        public bool Status { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime UpdatedDate { get; set; }
+        public int ParentEmpId { get; set; }
+
+    }
+}
+
+
+
+employee.DTO
+
+
+namespace RealEsateCRMAPI.DTO
+{
+    public class EmployeeDTO
+    {
+        public int EmployeeId { get; set; }
+        public string EmployeeNo { get; set; }
+        public string Name { get; set; }
+        public int DesginationId { get; set; }
+        public DateTime DateOfJoin { get; set; }
+        public DateTime DateofLeaving { get; set; }
+        public string Gender { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string AlternateMobile { get; set; }
+        public string Address { get; set; }
+        public bool Status { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime UpdatedDate { get; set; }
+        public int ParentEmpId { get; set; }
+    }
+}
+
+employeecontroller
+
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using RealEsateCRMAPI.DTO;
+using RealEsateCRMAPI.Entities;
+using System.Net;
+
+namespace RealEsateCRMAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class EmployeeController : ControllerBase
+    {
+        private readonly DBContext DBContext;
+
+        public EmployeeController(DBContext DBContext)
+        {
+            this.DBContext = DBContext;
+        }
+        [HttpGet]
+        public async Task<ActionResult<List<EmployeeDTO>>> Get()
+        {
+            var List = await DBContext.Employees.Select(
+                s => new EmployeeDTO
+                {
+                    EmployeeId = s.EmployeeId,
+                    EmployeeNo = s.EmployeeNo,
+                    Name = s.Name,
+                    DesginationId = s.DesginationId,
+                    DateOfJoin = s.DateOfJoin,
+                    DateofLeaving = s.DateofLeaving,
+                    Gender = s.Gender,
+                    Mobile = s.Mobile,
+                    Email = s.Email,
+                    AlternateMobile = s.AlternateMobile,
+                    Address = s.Address,
+                    Status = s.Status,
+                    CreatedDate = s.CreatedDate,
+                    UpdatedDate = s.UpdatedDate,
+                    ParentEmpId = s.ParentEmpId,
+                }
+            ).ToListAsync();
+
+            if (List.Count < 0)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return List;
+            }
+        }
+        [HttpGet("GetById")]
+        public async Task<ActionResult<Employee>> GetById(int Id)
+        {
+            var employee= await DBContext.Employees.Where(s => s.EmployeeId == Id).FirstOrDefaultAsync();
+            if (employee == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return employee;
+            }
+        }
+        [HttpPost]
+        public async Task<HttpStatusCode> Insert(EmployeeDTO employeeDTO)
+        {
+            var entity = new Employee()
+            {
+                EmployeeNo = employeeDTO.EmployeeNo,
+                Name = employeeDTO.Name,
+                DesginationId = employeeDTO.DesginationId,
+                DateOfJoin = employeeDTO.DateOfJoin,
+                DateofLeaving = employeeDTO.DateofLeaving,
+                Gender = employeeDTO.Gender,
+                Mobile = employeeDTO.Mobile,
+                Email = employeeDTO.Email,
+                AlternateMobile = employeeDTO.AlternateMobile,
+                Address = employeeDTO.Address,
+                Status = employeeDTO.Status,
+                CreatedDate = employeeDTO.CreatedDate,
+                UpdatedDate = employeeDTO.UpdatedDate,
+                ParentEmpId = employeeDTO.ParentEmpId,
+
+            };
+            DBContext.Employees.Add(entity);
+            await DBContext.SaveChangesAsync();
+            return HttpStatusCode.Created;
+        }
+        [HttpPut]
+        public async Task<HttpStatusCode> Update(EmployeeDTO employeeDTO)
+        {
+            var entity = await DBContext.Employees.FirstOrDefaultAsync(s => s.EmployeeId == employeeDTO.EmployeeId);
+            entity.EmployeeNo = employeeDTO.EmployeeNo;
+            entity.Name = employeeDTO.Name;
+            entity.DesginationId = employeeDTO.DesginationId;
+            entity.DateOfJoin = employeeDTO.DateOfJoin;
+            entity.DateofLeaving = employeeDTO.DateofLeaving;
+            entity.Gender = employeeDTO.Gender;
+            entity.Mobile = employeeDTO.Mobile;
+            entity.Email = employeeDTO.Email;
+            entity.AlternateMobile = employeeDTO.AlternateMobile;
+            entity.Address = employeeDTO.Address;
+            entity.Status = employeeDTO.Status;
+            entity.UpdatedDate = employeeDTO.UpdatedDate;
+            entity.ParentEmpId = employeeDTO.ParentEmpId;
+            await DBContext.SaveChangesAsync();
+            return HttpStatusCode.OK;
+        }
+        [HttpDelete("{Id}")]
+        public async Task<HttpStatusCode> Delete(int Id)
+        {
+            var entity = new Employee()
+            {
+                EmployeeId = Id
+            };
+            DBContext.Employees.Attach(entity);
+            DBContext.Employees.Remove(entity);
+            await DBContext.SaveChangesAsync();
+            return HttpStatusCode.OK;
+        }
+    }
+}
